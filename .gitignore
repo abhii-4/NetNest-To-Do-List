@@ -1,0 +1,32 @@
+# Environment variables (Secrets)
+.env
+Backend/.env
+Frontend/.env
+
+# Firebase service account credential files (Secrets)
+Backend/*.json
+!Backend/package.json
+!Backend/tsconfig.json
+
+# Dependencies
+node_modules/
+Frontend/node_modules/
+Backend/node_modules/
+
+# Production build output
+build/
+Frontend/build/
+
+# Python cache & virtual environments
+__pycache__/
+Backend/__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# System files
+.DS_Store
+Thumbs.db
+.vscode/

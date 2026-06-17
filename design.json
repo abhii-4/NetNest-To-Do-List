@@ -1,0 +1,122 @@
+{
+  "project_name": "NetNest",
+  "app_type": "saas_app",
+  "theme": {
+    "mode": "dark",
+    "archetype": "Luxury (Premium, Depth, Mystery) & Performance Pro Hybrid",
+    "vibe": "Cinematic, luxury automotive style, sleek, high-contrast, focused"
+  },
+  "colors": {
+    "background": {
+      "base": "#0B0B0B",
+      "surface_glass": "rgba(26, 26, 26, 0.45)",
+      "sidebar": "#121212",
+      "hover": "rgba(255, 255, 255, 0.04)"
+    },
+    "accent": {
+      "primary": "#DC143C",
+      "primary_hover": "#ED1C45",
+      "glow": "rgba(220, 20, 60, 0.4)"
+    },
+    "text": {
+      "primary": "#FFFFFF",
+      "secondary": "#8A8A8E",
+      "muted": "#555555"
+    },
+    "border": {
+      "glass": "rgba(255, 255, 255, 0.08)",
+      "divider": "rgba(255, 255, 255, 0.05)",
+      "active": "#DC143C"
+    },
+    "status": {
+      "success": "#10B981",
+      "error": "#DC143C",
+      "warning": "#F59E0B"
+    }
+  },
+  "typography": {
+    "headings": {
+      "font_family": "'Cabinet Grotesk', sans-serif",
+      "weights": ["500", "700", "800"],
+      "h1": "text-4xl sm:text-5xl lg:text-6xl tracking-tighter font-extrabold",
+      "h2": "text-2xl sm:text-3xl lg:text-4xl tracking-tight font-bold",
+      "h3": "text-xl sm:text-2xl tracking-tight font-semibold"
+    },
+    "body": {
+      "font_family": "'Manrope', sans-serif",
+      "weights": ["400", "500", "600"],
+      "base": "text-base font-medium leading-relaxed tracking-wide",
+      "small": "text-sm font-medium",
+      "xs": "text-xs font-semibold uppercase tracking-[0.2em]"
+    }
+  },
+  "surfaces_and_glassmorphism": {
+    "login_panel": "backdrop-blur-3xl bg-[#1A1A1A]/40 border border-white/10 shadow-[0_15px_50px_rgba(0,0,0,0.6)] rounded-2xl p-8",
+    "dashboard_card": "bg-[#141414] border border-white/5 shadow-lg rounded-xl overflow-hidden",
+    "task_item": "group flex items-center justify-between p-4 bg-transparent hover:bg-white/[0.02] border-b border-white/5 transition-colors cursor-pointer",
+    "share_modal": "backdrop-blur-2xl bg-[#0B0B0B]/90 border border-white/10 shadow-2xl rounded-2xl"
+  },
+  "buttons_and_interactions": {
+    "primary": "bg-[#DC143C] text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 hover:bg-[#ED1C45] hover:shadow-[0_0_20px_rgba(220,20,60,0.4)]",
+    "secondary": "bg-transparent text-white border border-white/20 font-semibold py-3 px-6 rounded-lg transition-all hover:border-white/40 hover:bg-white/5",
+    "icon": "text-[#8A8A8E] hover:text-white transition-colors duration-200",
+    "input": "w-full bg-[#1A1A1A]/50 border border-white/10 rounded-lg p-3 text-white placeholder-[#555555] focus:border-[#DC143C] focus:ring-1 focus:ring-[#DC143C] outline-none transition-all"
+  },
+  "animations_gsap": {
+    "page_load": {
+      "type": "stagger",
+      "properties": { "y": 30, "opacity": 0, "duration": 0.8, "ease": "power3.out", "stagger": 0.1 }
+    },
+    "task_add": {
+      "type": "slide_down_scale_in",
+      "properties": { "height": 0, "opacity": 0, "scale": 0.95, "y": -15, "duration": 0.5, "ease": "back.out(1.2)" }
+    },
+    "task_delete": {
+      "type": "scale_down_fade_out_collapse",
+      "properties": { "height": 0, "opacity": 0, "scale": 0.9, "x": 20, "duration": 0.4, "ease": "power2.inOut" }
+    },
+    "task_complete": {
+      "type": "line_through_trace",
+      "description": "Animate a line-through pseudo-element from width 0% to 100%, alongside text color shifting to #555555. Use GSAP or CSS transitions on an absolutely positioned span acting as the strike-through line."
+    },
+    "hover_magnetic": {
+      "description": "For main CTA buttons, use a subtle magnetic GSAP effect tracking the mouse (x/y +/- 5px) combined with a CSS box-shadow glow."
+    }
+  },
+  "layout_and_spacing": {
+    "auth_page": "min-h-screen flex items-center justify-center bg-[#0B0B0B] relative overflow-hidden",
+    "dashboard_grid": "h-screen flex bg-[#0B0B0B] overflow-hidden",
+    "sidebar": "w-72 border-r border-white/5 bg-[#121212] flex flex-col h-full",
+    "main_content": "flex-1 flex flex-col h-full bg-[#0B0B0B]",
+    "spacing_scale": "Use generous padding: p-6, p-8, gap-6, gap-8 to maintain an open, luxury automotive dashboard feel."
+  },
+  "components_strategy": {
+    "auth_tabs": "Use Shadcn Tabs. Remove default backgrounds. Use an active indicator (a crimson bottom border or pill background) with sliding animation.",
+    "share_modal": "Use Shadcn Dialog. Include 3 permission badges (View, Edit, Full Access) styled distinctively.",
+    "loading_spinner": "Custom minimal SVG spinner with GSAP rotation and stroke-dasharray animation in crimson.",
+    "dropdowns": "Shadcn DropdownMenu with dark glassmorphism styling (`backdrop-blur-xl bg-[#1A1A1A]/80 border border-white/10`)."
+  },
+  "media_and_assets": {
+    "images": {
+      "auth_background": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=2000&q=80",
+      "empty_state_illustration": "https://images.unsplash.com/photo-1542282088-fe8426682b8f?auto=format&fit=crop&w=1000&q=80",
+      "description": "Auth background acts as a subtle dark abstract/crimson texture under a deep black gradient overlay. Empty state image is an automotive-inspired abstract to keep the dashboard feeling premium when no tasks exist."
+    },
+    "icons": "lucide-react (using lightweight, crisp strokes. Match stroke width across all icons, preferably strokeWidth={1.5})"
+  },
+  "testing_requirements": {
+    "data_testid": "ALL interactive elements, form inputs, modals, auth tabs, task items, and actionable buttons MUST include a `data-testid` attribute (e.g., `data-testid='login-submit-button'`, `data-testid='add-task-input'`). Use kebab-case."
+  },
+  "firebase_integration_notes": {
+    "auth": "Support Email/Password + Phone OTP. Phone OTP requires ReCAPTCHA integration.",
+    "firestore": "Collections for `users`, `lists`, and `tasks`. Sharing requires permission fields (read, edit, full) mapped to user emails or UIDs."
+  },
+  "instructions_to_main_agent": [
+    "Load GSAP and use the `useGSAP` hook or standard `gsap.context` in React to safely animate elements on mount.",
+    "Import custom fonts (Cabinet Grotesk and Manrope) using standard CDN or local assets.",
+    "Build the dashboard layout focusing on empty space and high-contrast typography, avoiding unnecessary borders.",
+    "Ensure Firebase config is modular. Mock API endpoints ONLY IF Firebase credentials are entirely absent.",
+    "Make sure the 'Share List' UI reacts gracefully based on the selected permission tier.",
+    "Implement the task completion strike-through as a cinematic GSAP trace animation, not just a static text-decoration."
+  ]
+}
