@@ -2,6 +2,10 @@
 
 NetNest is a sleek, modern, and high-performance task management web application. It features a stunning glassmorphic UI built with React, Tailwind CSS, and GSAP/Framer Motion animations. The backend is powered by FastAPI, implementing dual-sync persistence across a local MongoDB instance and Google Cloud Firestore, secured with Firebase Authentication.
 
+
+<img width="1920" height="911" alt="auth_page_preview" src="https://github.com/user-attachments/assets/445a5496-c246-4c73-99fe-c0c8b3f396d6" />
+
+
 ## 📂 Project Structure
 
 ```
