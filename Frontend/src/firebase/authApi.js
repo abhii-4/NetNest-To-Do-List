@@ -1,11 +1,11 @@
-// Authentication helpers wrapping Firebase Auth (Email/Password + Phone OTP).
+// Authentication helpers wrapping Firebase Auth (Email/Password + Google Auth).
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
   onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from "firebase/auth";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "./config";
@@ -38,37 +38,13 @@ export const signInWithEmail = async (email, password) => {
   return cred.user;
 };
 
-export const logout = () => signOut(auth);
-
-// Phone OTP: returns a ConfirmationResult that we can later .confirm(code).
-let recaptchaVerifier = null;
-
-export const getRecaptchaVerifier = (containerId = "recaptcha-container") => {
-  if (recaptchaVerifier) return recaptchaVerifier;
-  recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
-    size: "invisible",
-  });
-  return recaptchaVerifier;
-};
-
-export const resetRecaptcha = () => {
-  try {
-    recaptchaVerifier?.clear();
-  } catch (e) {
-    /* noop */
-  }
-  recaptchaVerifier = null;
-};
-
-export const sendPhoneOtp = async (phoneNumber) => {
-  const verifier = getRecaptchaVerifier();
-  return signInWithPhoneNumber(auth, phoneNumber, verifier);
-};
-
-export const confirmPhoneOtp = async (confirmationResult, code) => {
-  const cred = await confirmationResult.confirm(code);
+export const signInWithGoogle = async () => {
+  const provider = new GoogleAuthProvider();
+  const cred = await signInWithPopup(auth, provider);
   await upsertUserDoc(cred.user);
   return cred.user;
 };
+
+export const logout = () => signOut(auth);
 
 export const subscribeAuth = (cb) => onAuthStateChanged(auth, cb);

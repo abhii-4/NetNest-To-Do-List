@@ -1,17 +1,14 @@
-
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import gsap from "gsap";
-import { Mail, Phone, Loader2, Lock, ChevronRight, Eye, EyeOff } from "lucide-react";
+import { Mail, Loader2, Lock, ChevronRight, Eye, EyeOff } from "lucide-react";
 import { Toaster, toast } from "sonner";
 import "sonner/dist/styles.css";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   signInWithEmail,
   signUpWithEmail,
-  sendPhoneOtp,
-  confirmPhoneOtp,
-  resetRecaptcha,
+  signInWithGoogle,
 } from "@/firebase/authApi";
 import MagneticButton from "@/components/MagneticButton";
 
@@ -19,21 +16,15 @@ export default function AuthPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [mode, setMode] = useState("login"); // login | signup
-  const [method, setMethod] = useState("email"); // email | phone
   const panelRef = useRef(null);
 
   // Email/password state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-
-  // Phone state
-  const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
-  const [confirmation, setConfirmation] = useState(null);
+  const [recaptchaToken, setRecaptchaToken] = useState(null);
 
   const [busy, setBusy] = useState(false);
-
 
   useEffect(() => {
     if (user && !loading) navigate("/dashboard", { replace: true });
@@ -54,8 +45,44 @@ export default function AuthPage() {
     return () => ctx.revert();
   }, []);
 
+  // Dynamically initialize and render Google reCAPTCHA v2 checkbox
+  useEffect(() => {
+    let interval = null;
+    const initRecaptcha = () => {
+      if (window.grecaptcha && window.grecaptcha.render) {
+        try {
+          const siteKey = process.env.REACT_APP_RECAPTCHA_SITE_KEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI";
+          window.grecaptcha.render("email-recaptcha", {
+            sitekey: siteKey,
+            callback: (token) => {
+              setRecaptchaToken(token);
+            },
+            "expired-callback": () => {
+              setRecaptchaToken(null);
+            },
+          });
+          clearInterval(interval);
+        } catch (e) {
+          console.error("reCAPTCHA rendering issue:", e);
+          clearInterval(interval);
+        }
+      }
+    };
+    interval = setInterval(initRecaptcha, 300);
+    return () => {
+      clearInterval(interval);
+      const container = document.getElementById("email-recaptcha");
+      if (container) container.innerHTML = "";
+      setRecaptchaToken(null);
+    };
+  }, [mode]);
+
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
+    if (!recaptchaToken) {
+      toast.error("Please solve the reCAPTCHA first.");
+      return;
+    }
     setBusy(true);
     try {
       if (mode === "login") {
@@ -76,35 +103,24 @@ export default function AuthPage() {
       } else {
         toast.error(err?.message?.replace("Firebase: ", "") || "Authentication failed");
       }
+      // Reset reCAPTCHA on failure
+      if (window.grecaptcha) {
+        window.grecaptcha.reset();
+        setRecaptchaToken(null);
+      }
     } finally {
       setBusy(false);
     }
   };
 
-  const handleSendOtp = async (e) => {
-    e.preventDefault();
+  const handleGoogleSubmit = async () => {
     setBusy(true);
     try {
-      const result = await sendPhoneOtp(phone.trim());
-      setConfirmation(result);
-      toast.success("OTP sent");
+      await signInWithGoogle();
+      toast.success("Welcome to NetNest");
     } catch (err) {
-      resetRecaptcha();
-      toast.error(err?.message?.replace("Firebase: ", "") || "Failed to send OTP");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleVerifyOtp = async (e) => {
-    e.preventDefault();
-    if (!confirmation) return;
-    setBusy(true);
-    try {
-      await confirmPhoneOtp(confirmation, otp.trim());
-      toast.success("Signed in");
-    } catch (err) {
-      toast.error(err?.message?.replace("Firebase: ", "") || "Invalid OTP");
+      console.error("Google login error:", err);
+      toast.error(err?.message?.replace("Firebase: ", "") || "Google login failed");
     } finally {
       setBusy(false);
     }
@@ -166,149 +182,96 @@ export default function AuthPage() {
           ))}
         </div>
 
-        {/* Method tabs */}
-        <div data-anim="stagger" className="flex gap-4 mb-6 border-b border-white/5">
-          {[
-            { id: "email", label: "Email", Icon: Mail },
-            { id: "phone", label: "Phone OTP", Icon: Phone },
-          ].map(({ id, label, Icon }) => (
+        {/* Email form */}
+        <form onSubmit={handleEmailSubmit} className="space-y-4" data-anim="stagger">
+          <div className="relative">
+            <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" />
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@domain.com"
+              data-testid="email-input"
+              className="w-full bg-[#1A1A1A]/60 border border-white/10 rounded-lg pl-10 pr-3 py-3 text-white placeholder-[#555] focus:border-[#DC143C] focus:ring-1 focus:ring-[#DC143C] outline-none transition-all"
+            />
+          </div>
+          <div className="relative">
+            <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" />
+            <input
+              type={showPassword ? "text" : "password"}
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password (min 6 chars)"
+              data-testid="password-input"
+              className="w-full bg-[#1A1A1A]/60 border border-white/10 rounded-lg pl-10 pr-10 py-3 text-white placeholder-[#555] focus:border-[#DC143C] focus:ring-1 focus:ring-[#DC143C] outline-none transition-all"
+            />
             <button
-              key={id}
-              onClick={() => {
-                setMethod(id);
-                setConfirmation(null);
-              }}
-              data-testid={`method-${id}`}
-              className={`flex items-center gap-2 pb-3 text-sm font-semibold tracking-wide transition-colors relative ${
-                method === id ? "text-white" : "text-[#555] hover:text-[#8A8A8E]"
-              }`}
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#555] hover:text-white transition-colors"
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
-              <Icon size={15} strokeWidth={1.8} />
-              {label}
-              {method === id && (
-                <span className="absolute bottom-[-1px] left-0 right-0 h-[2px] bg-[#DC143C] rounded-full" />
-              )}
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
-          ))}
+          </div>
+
+          {/* Google reCAPTCHA v2 Checkbox Container */}
+          <div className="flex justify-center py-2" data-anim="stagger">
+            <div id="email-recaptcha" data-testid="recaptcha-container" />
+          </div>
+
+          <MagneticButton
+            type="submit"
+            disabled={busy || !recaptchaToken}
+            data-testid="email-submit-btn"
+            className="w-full bg-[#DC143C] hover:bg-[#ED1C45] disabled:opacity-40 text-white font-semibold py-3 px-6 rounded-lg transition-all hover:shadow-[0_0_24px_rgba(220,20,60,0.5)] flex items-center justify-center gap-2"
+          >
+            {busy ? <Loader2 size={18} className="animate-spin" /> : null}
+            {mode === "login" ? "Sign In" : "Create Account"}
+            <ChevronRight size={16} />
+          </MagneticButton>
+        </form>
+
+        {/* Divider */}
+        <div className="flex items-center gap-3 my-6" data-anim="stagger">
+          <span className="h-[1px] flex-1 bg-white/10" />
+          <span className="text-xs uppercase tracking-wider text-[#555]">or</span>
+          <span className="h-[1px] flex-1 bg-white/10" />
         </div>
 
-        {/* Email form */}
-        {method === "email" && (
-          <form onSubmit={handleEmailSubmit} className="space-y-3" data-anim="stagger">
-            <div className="relative">
-              <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" />
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@domain.com"
-                data-testid="email-input"
-                className="w-full bg-[#1A1A1A]/60 border border-white/10 rounded-lg pl-10 pr-3 py-3 text-white placeholder-[#555] focus:border-[#DC143C] focus:ring-1 focus:ring-[#DC143C] outline-none transition-all"
+        {/* Google Sign-In Button */}
+        <div data-anim="stagger">
+          <MagneticButton
+            type="button"
+            onClick={handleGoogleSubmit}
+            disabled={busy}
+            data-testid="google-signin-btn"
+            className="w-full bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 text-white font-semibold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-3 hover:shadow-[0_0_24px_rgba(255,255,255,0.05)]"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24">
+              <path
+                fill="#EA4335"
+                d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.67 1.57 14.97 1 12 1 7.35 1 3.4 3.65 1.5 7.5l3.82 2.96C6.22 7.54 8.89 5.04 12 5.04z"
               />
-            </div>
-            <div className="relative">
-              <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" />
-              <input
-                type={showPassword ? "text" : "password"}
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password (min 6 chars)"
-                data-testid="password-input"
-                className="w-full bg-[#1A1A1A]/60 border border-white/10 rounded-lg pl-10 pr-10 py-3 text-white placeholder-[#555] focus:border-[#DC143C] focus:ring-1 focus:ring-[#DC143C] outline-none transition-all"
+              <path
+                fill="#4285F4"
+                d="M23.49 12.27c0-.81-.07-1.59-.2-2.34H12v4.44h6.44c-.28 1.48-1.12 2.73-2.38 3.58v2.96h3.82c2.23-2.05 3.61-5.07 3.61-8.64z"
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#555] hover:text-white transition-colors"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-            <MagneticButton
-              type="submit"
-              disabled={busy}
-              data-testid="email-submit-btn"
-              className="w-full bg-[#DC143C] hover:bg-[#ED1C45] disabled:opacity-50 text-white font-semibold py-3 px-6 rounded-lg transition-all hover:shadow-[0_0_24px_rgba(220,20,60,0.5)] flex items-center justify-center gap-2"
-            >
-              {busy ? <Loader2 size={18} className="animate-spin" /> : null}
-              {mode === "login" ? "Sign In" : "Create Account"}
-              <ChevronRight size={16} />
-            </MagneticButton>
-          </form>
-        )}
-
-        {/* Phone form */}
-        {method === "phone" && (
-          <div className="space-y-3" data-anim="stagger">
-            {!confirmation ? (
-              <form onSubmit={handleSendOtp} className="space-y-3">
-                <div className="relative">
-                  <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" />
-                  <input
-                    type="tel"
-                    required
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+15555550123 (E.164 format)"
-                    data-testid="phone-input"
-                    className="w-full bg-[#1A1A1A]/60 border border-white/10 rounded-lg pl-10 pr-3 py-3 text-white placeholder-[#555] focus:border-[#DC143C] focus:ring-1 focus:ring-[#DC143C] outline-none"
-                  />
-                </div>
-                <MagneticButton
-                  type="submit"
-                  disabled={busy}
-                  data-testid="send-otp-btn"
-                  className="w-full bg-[#DC143C] hover:bg-[#ED1C45] disabled:opacity-50 text-white font-semibold py-3 px-6 rounded-lg transition-all hover:shadow-[0_0_24px_rgba(220,20,60,0.5)] flex items-center justify-center gap-2"
-                >
-                  {busy ? <Loader2 size={18} className="animate-spin" /> : null}
-                  Send OTP
-                </MagneticButton>
-              </form>
-            ) : (
-              <form onSubmit={handleVerifyOtp} className="space-y-3">
-                <input
-                  type="text"
-                  required
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  placeholder="6-digit code"
-                  inputMode="numeric"
-                  data-testid="otp-input"
-                  className="w-full bg-[#1A1A1A]/60 border border-white/10 rounded-lg px-4 py-3 text-white text-center tracking-[0.4em] text-lg placeholder-[#555] focus:border-[#DC143C] focus:ring-1 focus:ring-[#DC143C] outline-none"
-                />
-                <MagneticButton
-                  type="submit"
-                  disabled={busy}
-                  data-testid="verify-otp-btn"
-                  className="w-full bg-[#DC143C] hover:bg-[#ED1C45] disabled:opacity-50 text-white font-semibold py-3 px-6 rounded-lg transition-all hover:shadow-[0_0_24px_rgba(220,20,60,0.5)] flex items-center justify-center gap-2"
-                >
-                  {busy ? <Loader2 size={18} className="animate-spin" /> : null}
-                  Verify & Sign In
-                </MagneticButton>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setConfirmation(null);
-                    resetRecaptcha();
-                  }}
-                  className="w-full text-xs text-[#8A8A8E] hover:text-white py-2"
-                >
-                  Use a different number
-                </button>
-              </form>
-            )}
-            <p className="text-xs text-[#555] text-center mt-2">
-              Phone Auth requires Blaze plan + Phone provider enabled.
-            </p>
-          </div>
-        )}
-
-        {/* Invisible reCAPTCHA target */}
-        <div id="recaptcha-container" />
+              <path
+                fill="#FBBC05"
+                d="M5.32 10.46a7.16 7.16 0 010 3.08l-3.82 2.96A11.96 11.96 0 011 12c0-1.57.3-3.07.82-4.46l3.5 2.92z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.82-2.96c-1.1.74-2.52 1.18-4.14 1.18-3.11 0-5.78-2.5-6.68-5.42L1.5 15.8C3.4 19.65 7.35 22 12 23z"
+              />
+            </svg>
+            Continue with Google
+          </MagneticButton>
+        </div>
       </div>
       <footer className="absolute bottom-4 left-0 right-0 text-center text-[11px] text-[#555] tracking-wide">
         &copy; {new Date().getFullYear()} NetNest. All rights reserved.
