@@ -75,6 +75,18 @@ export default function AuthPage() {
       if (container) container.innerHTML = "";
       setRecaptchaToken(null);
     };
+  }, []);
+
+  // Reset reCAPTCHA checkbox state when switching between Login and Sign Up modes
+  useEffect(() => {
+    if (window.grecaptcha && window.grecaptcha.reset) {
+      try {
+        window.grecaptcha.reset();
+        setRecaptchaToken(null);
+      } catch (e) {
+        /* noop */
+      }
+    }
   }, [mode]);
 
   const handleEmailSubmit = async (e) => {
